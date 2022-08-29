@@ -1,7 +1,9 @@
 ---
 - name: install microk8s
-  hosts: "{{ your_ip }}"
+  hosts: all
   remote_user: "{{ your_user }}"
   become: true
+  vars_files:
+    - ../group_vars/all/vars.yml
   roles:
     - role: ../roles/microk8s

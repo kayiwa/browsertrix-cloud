@@ -1,1 +1,9 @@
-3.2.1.4 # ip address of your endpoint
+---
+microk8s_ha:
+  hosts:
+    node1:
+      ansible_host: 3.2.1.0
+    node2:
+      ansible_host: 3.2.6.2
+    node3:
+      ansible_host: 3.2.1.1

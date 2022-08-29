@@ -1,0 +1,42 @@
+---
+# tasks file for docker_ce
+- name: docker_ce | install apt key
+  ansible.builtin.apt_key:
+    url: "{{ docker_ce_apt_key_url }}"
+    state: present
+
+- name: docker_ce | install docker_ce repository
+  ansible.builtin.apt_repository:
+    repo: "{{ docker_ce_apt_repository_repo }}"
+    state: present
+  notify:
+    - apt update cache
+
+- name: docker_ce | install docker_ce packages
+  ansible.builtin.apt:
+    name: "{{ docker_ce_packages }}"
+    state: present
+
+- name: docker_ce | create privileged docker user group
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: docker_ce | add privileged users to the docker user group
+  ansible.builtin.user:
+    name: "{{ user }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_ce_privileged_users }}"
+  loop_control:
+    loop_var: user
+  when:
+    - docker_ce_privileged_users is defined
+
+- name: docker_ce | start and enable docker_ce
+  ansible.builtin.service:
+    name: "{{ docker_ce_service }}"
+    state: started
+    enabled: true
+  when:
+    - ansible_connection not in [ "container", "docker", "community.docker.docker" ]

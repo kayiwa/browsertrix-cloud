@@ -2,7 +2,7 @@
 galaxy_info:
   author: webrecorder
   namespace: webrecorder
-  description: Installs Browsertrix
+  description: Installs Docker CE
   company: webrecorder
 
   license: ISC
@@ -14,5 +14,4 @@ galaxy_info:
       versions:
         - focal
 
-dependencies:
-  - role: docker_ce
+dependencies: []
