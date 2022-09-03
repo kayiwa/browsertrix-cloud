@@ -31,31 +31,32 @@ superuser:
 
 # API Image
 # =========================================
-api_image: "webrecorder/browsertrix-api"
-api_pull_policy: "Never"
+api_image: "docker.io/webrecorder/browsertrix-backend:dev"
+api_pull_policy: "Always"
 
 api_password_secret: "c9085f33ecce4347aa1d69339e16c499"
 
 api_num_replicas: 1
 
 api_requests_cpu: "10m"
-api_limits_cpu: "128m"
+api_limits_cpu: "768m"
 
 api_requests_memory: "100Mi"
-api_limits_memory: "192Mi"
+api_limits_memory: "512Mi"
+
+job_cpu: "3m"
+job_memory: "70Mi"
 
 
 # Nginx Image
 # =========================================
-nginx_image: "nginx"
-nginx_pull_policy: "IfNotPresent"
-
-nginx_num_replicas: 1
+nginx_image: "docker.io/webrecorder/browsertrix-frontend:dev"
+nginx_pull_policy: "Always"
 
 nginx_requests_cpu: "3m"
 nginx_limits_cpu: "10m"
 
-nginx_requests_memory: "4Mi"
+nginx_requests_memory: "12Mi"
 nginx_limits_memory: "12Mi"
 
 
@@ -65,7 +66,7 @@ mongo_local: true
 
 mongo_host: "local-mongo.default"
 
-mongo_image: "mongo"
+mongo_image: "docker.io/library/mongo:5.0.11"
 mongo_pull_policy: "IfNotPresent"
 
 mongo_requests_cpu: "12m"
@@ -139,7 +140,7 @@ minio_image: minio/minio
 minio_mc_image: minio/mc
 minio_pull_policy: "IfNotPresent"
 
-minio_local_bucket_name: &local_bucket_name "test-bucket"
+minio_local_bucket_name: &local_bucket_name "btrix-data"
 
 
 # Storage
