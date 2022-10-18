@@ -9,7 +9,13 @@ import LiteElement, { html } from "../../utils/LiteElement";
 import { CopyButton } from "../../components/copy-button";
 import type { Crawl, CrawlTemplate } from "./types";
 
-type SectionName = "overview" | "watch" | "replay" | "files" | "logs";
+type SectionName =
+  | "overview"
+  | "watch"
+  | "replay"
+  | "files"
+  | "logs"
+  | "exclusions";
 
 const POLL_INTERVAL_SECONDS = 10;
 
@@ -56,7 +62,6 @@ export class CrawlDetail extends LiteElement {
   @state()
   private isDialogVisible: boolean = false;
 
-  // For long polling:
   private timerId?: number;
 
   // TODO localize
@@ -98,7 +103,10 @@ export class CrawlDetail extends LiteElement {
       const prevCrawl = changedProperties.get("crawl");
 
       if (prevCrawl && this.crawl) {
-        if (prevCrawl.state === "running" && this.crawl.state !== "running") {
+        if (
+          (prevCrawl.state === "running" || prevCrawl.state === "stopping") &&
+          !this.isActive
+        ) {
           this.crawlDone();
         }
       }
@@ -108,7 +116,11 @@ export class CrawlDetail extends LiteElement {
   connectedCallback(): void {
     // Set initial active section based on URL #hash value
     const hash = window.location.hash.slice(1);
-    if (["overview", "watch", "replay", "files", "logs"].includes(hash)) {
+    if (
+      ["overview", "watch", "replay", "files", "logs", "exclusions"].includes(
+        hash
+      )
+    ) {
       this.sectionName = hash as SectionName;
     }
     super.connectedCallback();
@@ -142,6 +154,9 @@ export class CrawlDetail extends LiteElement {
       case "logs":
         sectionContent = this.renderLogs();
         break;
+      case "exclusions":
+        sectionContent = this.renderQueue();
+        break;
       default:
         sectionContent = this.renderOverview();
         break;
@@ -167,16 +182,15 @@ export class CrawlDetail extends LiteElement {
       <div class="mb-2">${this.renderHeader()}</div>
 
       <main>
-        <section class="grid grid-cols-6 md:gap-4 mb-4">
-          <div class="col-span-6 md:col-span-1">
-            <h3 class="font-medium p-2">${msg("Summary")}</h3>
-          </div>
-          <div class="col-span-6 md:col-span-5">${this.renderSummary()}</div>
+        <section class="rounded-lg border mb-4">
+          ${this.renderSummary()}
         </section>
 
         <section class="grid grid-cols-6 gap-4">
           <div class="col-span-6 md:col-span-1">${this.renderNav()}</div>
-          <div class="col-span-6 md:col-span-5">${sectionContent}</div>
+          <div class="col-span-6 md:col-span-5 md:rounded-lg md:border md:p-6">
+            ${sectionContent}
+          </div>
         </section>
       </main>
 
@@ -223,6 +237,7 @@ export class CrawlDetail extends LiteElement {
       <nav class="border-b md:border-b-0">
         <ul class="flex flex-row md:flex-col" role="menu">
           ${renderNavItem({ section: "overview", label: msg("Overview") })}
+          ${renderNavItem({ section: "exclusions", label: msg("Exclusions") })}
           ${this.isActive
             ? renderNavItem({
                 section: "watch",
@@ -231,7 +246,7 @@ export class CrawlDetail extends LiteElement {
             : ""}
           ${renderNavItem({ section: "replay", label: msg("Replay") })}
           ${renderNavItem({ section: "files", label: msg("Files") })}
-          ${renderNavItem({ section: "logs", label: msg("Logs") })}
+          ${/* renderNavItem({ section: "logs", label: msg("Logs") }) */ ""}
         </ul>
       </nav>
     `;
@@ -240,7 +255,7 @@ export class CrawlDetail extends LiteElement {
   private renderHeader() {
     return html`
       <header class="md:flex justify-between">
-        <h2 class="text-2xl font-medium mb-3 md:h-8">
+        <h2 class="text-xl font-medium mb-3 md:h-8">
           ${msg(
             html`<span class="font-normal">Crawl of</span> ${this.crawl
                 ? this.crawl.configName
@@ -372,30 +387,14 @@ export class CrawlDetail extends LiteElement {
   }
 
   private renderSummary() {
-    let crawlScaleLabel = `${this.crawl?.scale}`;
-
-    switch (this.crawl?.scale) {
-      case 1:
-        crawlScaleLabel = msg("Standard", { desc: "Crawl scale label" });
-        break;
-      case 2:
-        crawlScaleLabel = msg("Big (2x)", { desc: "Crawl scale label" });
-        break;
-      case 3:
-        crawlScaleLabel = msg("Bigger (3x)", { desc: "Crawl scale label" });
-        break;
-      default:
-        break;
-    }
-
     return html`
-      <dl class="grid grid-cols-4 gap-5 rounded-lg border py-3 px-5 text-sm">
+      <dl class="grid grid-cols-4 gap-5 text-center p-3 text-sm">
         <div class="col-span-2 md:col-span-1">
           <dt class="text-xs text-0-600">${msg("Status")}</dt>
           <dd>
             ${this.crawl
               ? html`
-                  <div class="flex items-baseline justify-between">
+                  <div class="inline-flex items-baseline justify-between">
                     <div
                       class="whitespace-nowrap capitalize${this.isActive
                         ? " motion-safe:animate-pulse"
@@ -454,6 +453,8 @@ export class CrawlDetail extends LiteElement {
                         <span class="text-purple-600">
                           <btrix-relative-duration
                             value=${`${this.crawl.started}Z`}
+                            unitCount="3"
+                            tickSeconds="1"
                           ></btrix-relative-duration>
                         </span>
                       `}
@@ -462,10 +463,10 @@ export class CrawlDetail extends LiteElement {
           </dd>
         </div>
         <div class="col-span-2 md:col-span-1">
-          <dt class="text-xs text-0-600">${msg("Crawl Scale")}</dt>
+          <dt class="text-xs text-0-600">${msg("Crawler Instances")}</dt>
           <dd>
             ${this.crawl
-              ? crawlScaleLabel
+              ? this.crawl?.scale
               : html`<sl-skeleton class="h-5"></sl-skeleton>`}
           </dd>
         </div>
@@ -478,11 +479,14 @@ export class CrawlDetail extends LiteElement {
 
     const isStarting = this.crawl.state === "starting";
     const isRunning = this.crawl.state === "running";
+    const isStopping = this.crawl.state === "stopping";
     const authToken = this.authState.headers.Authorization.split(" ")[1];
 
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium my-2">${msg("Watch Crawl")}</h3>
+        <h3 class="text-lg font-medium leading-none mb-2">
+          ${msg("Watch Crawl")}
+        </h3>
         ${isRunning && document.fullscreenEnabled
           ? html`
               <sl-icon-button
@@ -500,9 +504,22 @@ export class CrawlDetail extends LiteElement {
               ${msg("Crawl starting...")}
             </p>
           </div>`
-        : isRunning
+        : this.isActive
         ? html`
-            <div id="screencast-crawl">
+            ${isStopping
+              ? html`
+                  <div class="mb-4">
+                    <btrix-alert type="warning" class="text-sm">
+                      ${msg("Crawl stopping...")}
+                    </btrix-alert>
+                  </div>
+                `
+              : ""}
+
+            <div
+              id="screencast-crawl"
+              class="${isStopping ? "opacity-40" : ""} transition-opacity"
+            >
               <btrix-screencast
                 authToken=${authToken}
                 archiveId=${this.crawl.aid}
@@ -511,22 +528,34 @@ export class CrawlDetail extends LiteElement {
               ></btrix-screencast>
             </div>
           `
-        : html`
-            <div class="rounded border bg-neutral-50 p-3">
-              <p class="text-sm text-neutral-600">
-                ${msg("Crawl is not running.")}
-                ${this.hasFiles
-                  ? html`<a
-                      href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
-                      class="text-primary hover:underline"
-                      @click=${() => (this.sectionName = "replay")}
-                      >View replay</a
-                    >`
-                  : ""}
-              </p>
-            </div>
-          `}
+        : this.renderInactiveCrawlMessage()}
     `;
+  }
+
+  private renderQueue() {
+    return html`<h3 class="text-lg font-medium leading-none mb-4">
+        ${msg("Queue Exclusions")}
+      </h3>
+
+      <btrix-details open disabled>
+        <h4 slot="title">${msg("Exclusion Table")}</h4>
+        <btrix-queue-exclusion-table
+          .exclude=${this.crawlTemplate?.config?.exclude}
+        >
+        </btrix-queue-exclusion-table>
+      </btrix-details>
+
+      ${this.crawl && this.isActive
+        ? html`
+            <div class="mt-5">
+              <btrix-crawl-queue
+                archiveId=${this.crawl!.aid}
+                crawlId=${this.crawl!.id}
+                .authState=${this.authState}
+              ></btrix-crawl-queue>
+            </div>
+          `
+        : ""} `;
   }
 
   private renderReplay() {
@@ -540,7 +569,9 @@ export class CrawlDetail extends LiteElement {
 
     return html`
       <header class="flex justify-between">
-        <h3 class="text-lg font-medium my-2">${msg("Replay Crawl")}</h3>
+        <h3 class="text-lg font-medium leading-none mb-2">${msg(
+          "Replay Crawl"
+        )}</h3>
         ${
           document.fullscreenEnabled && canReplay
             ? html`
@@ -582,7 +613,7 @@ export class CrawlDetail extends LiteElement {
 
   private renderOverview() {
     return html`
-      <dl class="grid grid-cols-2 gap-5 rounded-lg border p-5">
+      <dl class="grid grid-cols-2 gap-5">
         <div class="col-span-2 md:col-span-1">
           <dt class="text-sm text-0-600">${msg("Started")}</dt>
           <dd>
@@ -710,7 +741,9 @@ export class CrawlDetail extends LiteElement {
 
   private renderFiles() {
     return html`
-      <h3 class="text-lg font-medium my-2">${msg("Download Files")}</h3>
+      <h3 class="text-lg font-medium leading-none mb-2">
+        ${msg("Download Files")}
+      </h3>
 
       ${this.hasFiles
         ? html`
@@ -757,15 +790,15 @@ export class CrawlDetail extends LiteElement {
     const scaleOptions = [
       {
         value: 1,
-        label: msg("Standard"),
+        label: "1",
       },
       {
         value: 2,
-        label: msg("Big (2x)"),
+        label: "2",
       },
       {
         value: 3,
-        label: msg("Bigger (3x)"),
+        label: "3",
       },
     ];
 
@@ -791,6 +824,24 @@ export class CrawlDetail extends LiteElement {
         <sl-button type="text" @click=${() => (this.openDialogName = undefined)}
           >${msg("Cancel")}</sl-button
         >
+      </div>
+    `;
+  }
+
+  private renderInactiveCrawlMessage() {
+    return html`
+      <div class="rounded border bg-neutral-50 p-3">
+        <p class="text-sm text-neutral-600">
+          ${msg("Crawl is not running.")}
+          ${this.hasFiles
+            ? html`<a
+                href=${`${this.crawlsBaseUrl}/crawl/${this.crawlId}#replay`}
+                class="text-primary hover:underline"
+                @click=${() => (this.sectionName = "replay")}
+                >View replay</a
+              >`
+            : ""}
+        </p>
       </div>
     `;
   }
@@ -825,7 +876,7 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  async getCrawl(): Promise<Crawl> {
+  private async getCrawl(): Promise<Crawl> {
     const data: Crawl = await this.apiFetch(
       `${this.crawlsAPIBaseUrl || this.crawlsBaseUrl}/${this.crawlId}.json`,
       this.authState!
@@ -845,7 +896,7 @@ export class CrawlDetail extends LiteElement {
     }
   }
 
-  async getCrawlTemplate(): Promise<CrawlTemplate> {
+  private async getCrawlTemplate(): Promise<CrawlTemplate> {
     if (!this.crawl) {
       throw new Error("missing crawl");
     }
