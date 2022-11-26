@@ -8,8 +8,7 @@
   ansible.builtin.include_tasks:
     file: configure_groups.yml
   when:
-    - microk8s_users is defined
-    - microk8s_users not in ([], None, '', omit)
+    - microk8s_user is defined
 
 - name: microk8s | configure plugins
   ansible.builtin.include_tasks:
@@ -21,6 +20,3 @@
 - name: microk8s | install browsertrix
   ansible.builtin.include_tasks:
     file: configure_helm.yml
-  run_once: true
-  when:
-    - microk8s_plugins is defined

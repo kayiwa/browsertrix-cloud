@@ -7,11 +7,15 @@
     update: true
     force: true
     version: main
+  tags:
+    - helm_upgrade
 
 - name: microk8s | Make repos git safe
   ansible.builtin.command: git config --global --add safe.directory "{{ browsertrix_cloud_home }}"
   become: true
   changed_when: false
+  tags:
+    - helm_upgrade
 
 - name: microk8s | grant permissions on deploy user
   ansible.builtin.file:
@@ -22,12 +26,16 @@
     follow: false
     recurse: true
     mode: 0775
+  tags:
+    - helm_upgrade
 
 - name: d_ocean | helm | output values yaml
   ansible.builtin.template:
     src: btrix_values.j2
     dest: "{{ microk8s_user_home }}/values.yaml"
     mode: u+rw
+  tags:
+    - helm_upgrade
 
 - name: microk8s | helm | deploy btrix
   ansible.builtin.command: helm upgrade --install -f ./chart/values.yaml -f {{ microk8s_user_home }}/values.yaml btrix ./chart/
@@ -37,3 +45,5 @@
   become: true
   become_user: "{{ microk8s_user }}"
   changed_when: helm_result.rc == 0
+  tags:
+    - helm_upgrade

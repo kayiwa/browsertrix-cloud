@@ -1,11 +1,15 @@
 ---
 # configure_groups file for microk8s
+- name: microk8s | create {{ microk8s_user }} group
+  ansible.builtin.group:
+    name: "{{ microk8s_user }}"
+
 - name: microk8s | add user to group
   ansible.builtin.user:
     name: "{{ microk8s_user }}"
+    group: "{{ microk8s_user }}"
     groups: microk8s
     append: true
-  register: microk8s_add_user_to_group
 
 - name: microk8s | Create .kube folder for the user
   ansible.builtin.file:
