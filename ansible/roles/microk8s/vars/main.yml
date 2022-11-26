@@ -1,2 +1,4 @@
 ---
 # vars file for microk8s
+browsertrix_cloud_home: "/opt/browsertrix-cloud"
+microk8s_user_home: "/home/{{ microk8s_user }}"

@@ -1,0 +1,12 @@
+---
+microk8s_user: conan
+microk8s_plugins:
+  dashboard: true        # The Kubernetes dashboard
+  dns: true              # CoreDNS
+  helm3: true            # Helm 3 - Kubernetes package manager
+  host-access: true      # Allow Pods connecting to Host services smoothly
+  ingress: true          # Ingress controller for external access
+  metrics-server: true   # K8s Metrics Server for API access to service
+  rbac: true             # Role-Based Access Control for authorisation
+  registry: true         # Private image registry exposed on localhost:32000
+  storage: true          # Storage class; allocates storage from host

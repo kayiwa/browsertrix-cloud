@@ -1,0 +1,76 @@
+# Resources / Node Types
+main_node_type: main
+ 
+crawler_node_type: crawling
+redis_node_type: crawling
+
+crawler_requests_cpu: "1200m"
+crawler_limits_cpu: "2200m"
+crawler_requests_memory: "1200Mi"
+crawler_limits_memory: "3200Mi"
+
+
+# DB
+mongo_local: true
+
+mongo_host: "local-mongo.default"
+
+mongo_image: "docker.io/library/mongo:5.0.11"
+mongo_pull_policy: "IfNotPresent"
+
+mongo_requests_cpu: "12m"
+mongo_limits_cpu: "128m"
+
+mongo_requests_memory: "96Mi"
+mongo_limits_memory: "512Mi"
+
+minio_local_bucket_name: &local_bucket_name "btrix-data"
+# Storage
+minio_local: true
+
+minio_scheme: "http"
+minio_host: "local-minio.default:9000"
+
+storages:
+  - name: "default"
+    access_key: "ADMIN"
+    secret_key: "PASSW0RD"
+    bucket_name: *local_bucket_name
+
+    endpoint_url: "http://local-minio.default:9000/"
+# Domain
+ingress:
+  host: "btrix.cloud"
+  cert_email: "test@example.com"
+  scheme: "http"
+  tls: false
+
+
+# Signing
+signer:
+  enabled: false
+  image: webrecorder/authsign:0.5.0
+
+  signer_requests_cpu: "3m"
+  signer_limits_cpu: "32m"
+
+  signer_requests_memory: "36Mi"
+  signer_limits_memory: "96Mi"
+
+# User Auth
+superuser:
+  email: admin@example.com
+  password:
+
+registration_enabled: "0"
+jwt_token_lifetime_minutes: 1440
+
+
+# Admin Send Email Options
+email:
+  smtp_host: ""
+  smtp_port: 587
+  sender_email: example@example.com
+  password: password
+
+

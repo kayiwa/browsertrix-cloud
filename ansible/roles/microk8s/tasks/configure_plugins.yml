@@ -8,7 +8,6 @@
     loop_var: microk8s_plugin
     label: "{{ microk8s_plugin.key }}"
   when:
-    - is_master is defined and ( is_master | bool)
     - microk8s_plugins is defined
     - microk8s_plugin.value
     - microk8s_plugin.key != "registry"
@@ -17,11 +16,6 @@
   changed_when:
     - "'Addon {{ microk8s_plugin.key }} is already enabled'
       not in microk8s_cmd_result.stdout"
-  tags:
-    - molecule-idempotence-notest
-    - microk8s
-    - microk8s.plugins
-    - microk8s.plugins.enable
 
 - name: microk8s | disable plugins
   ansible.builtin.command:
@@ -38,11 +32,6 @@
     - microk8s_plugins is defined
     - not (microk8s_plugin.value | bool)
     - microk8s_plugin.key != "registry"
-  tags:
-    - molecule-idempotence-notest
-    - microk8s
-    - microk8s.plugins
-    - microk8s.plugins.disable
 
 - name: microk8s | Enable registry
   ansible.builtin.command:
@@ -54,11 +43,6 @@
     - microk8s_plugins is defined
     - microk8s_plugins.registry is defined
     - (microk8s_plugins.registry | bool)
-  tags:
-    - microk8s
-    - microk8s.plugins
-    - microk8s.plugins.enable
-    - microk8s.plugins.enable.registry
 
 - name: microk8s | Disable registry
   ansible.builtin.command:
@@ -70,11 +54,6 @@
     - microk8s_plugins is defined
     - microk8s_plugins.registry is defined
     - not (microk8s_plugins.registry | bool)
-  tags:
-    - microk8s
-    - microk8s.plugins
-    - microk8s.plugins.disable
-    - microk8s.plugins.disable.registry
 
 - name: microk8s | Enable DNS
   ansible.builtin.command:
@@ -86,8 +65,3 @@
     - microk8s_plugins is defined
     - microk8s_plugins.dns is defined
     - (microk8s_plugins.dns | bool)
-  tags:
-    - microk8s
-    - microk8s.plugins
-    - microk8s.plugins.enable
-    - microk8s.plugins.enable.dns
